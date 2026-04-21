@@ -2,15 +2,106 @@
 
 Workshop: Build an AI email agent with Cloudflare Agents SDK and Email Routing.
 
+## What you'll build
+
+An AI Inbox Agent for **FastFlare Home Services** — a small business offering cleaning, plumbing, and landscaping. The owner currently manages a chaotic inbox of booking requests, status inquiries, follow-ups, and emergency calls.
+
+By the end of this workshop, they'll have an agent that:
+
+- Receives email via Cloudflare Email Routing
+- Understands intent using an LLM
+- Maintains conversation history across threads
+- Queries a built-in SQL database
+
+Not an auto-responder — a programmable, edge-native team member.
+
+## The Conceptual Arc
+
+Five concepts, each building on the previous one. **This repo covers the first three:**
+
+1. **Email triggers a persistent agent** — Email wakes up a persistent entity
+2. **AI = Understanding** — That entity reads and interprets your email
+3. **Persistence = Memory** — That entity remembers you
+4. *Tools = Action — That entity acts on your behalf (coming soon)*
+5. *Scheduling = Proactivity — That entity acts on its own (coming soon)*
+
+## Architecture
+
+```
+          Email arrives (SMTP)
+                 │
+                 ▼
+      ┌─────────────────────┐
+      │   Email Routing     │  Cloudflare Email Routing
+      └─────────────────────┘
+                 │
+                 ▼
+      ┌─────────────────────┐
+      │   email() handler   │  Worker entry point
+      │   + Resolver        │  Routes by sender → agent instance
+      └─────────────────────┘
+                 │
+                 ▼
+      ┌─────────────────────┐
+      │   SupportAgent      │  Durable Object (Agent)
+      │  ┌───────────────┐  │
+      │  │  onEmail()    │  │  Handles the email
+      │  │  this.sql     │  │  Per-instance SQLite
+      │  │  this.state   │  │  Working context
+      │  └───────────────┘  │
+      └─────────────────────┘
+```
+
+**Key concepts:**
+- An **Agent** is a Durable Object — it hibernates when idle, wakes on demand, and has its own SQLite storage
+- The **resolver** determines which agent instance handles each email — our custom resolver routes by sender so each customer gets their own isolated agent
+- One class (`SupportAgent`), many instances — one per customer
+
+## Prerequisites
+
+- Cloudflare account (free tier works) with a registered domain
+- Node.js installed
+- A code editor
+- Terminal / command line
+
+## Project Setup
+
+Clone this repo and install dependencies:
+
+```bash
+git clone https://github.com/harshil1712/email-agent-workshop-code.git
+cd email-agent-workshop-code
+npm install
+```
+
+> This project was scaffolded from the [`cloudflare/agents-starter`](https://github.com/cloudflare/agents-starter) template.
+
+### Project structure
+
+```
+email-agent-workshop/
+├── src/
+│   └── index.ts       ← All our code goes here
+├── wrangler.jsonc     ← Worker + agent configuration
+├── package.json
+└── tsconfig.json
+```
+
 ## Chapters
 
 - -> **[Chapter 1 - Email Triggers a Persistent Agent](https://github.com/harshil1712/email-agent-workshop-code/tree/chapter-1)** (this branch)
 - [Chapter 2 - AI = Understanding](https://github.com/harshil1712/email-agent-workshop-code/tree/chapter-2)
 - [Chapter 3 - Persistence = Memory](https://github.com/harshil1712/email-agent-workshop-code/tree/chapter-3)
 
+## Resources
+
+- [Slides](TODO)
+- [Cloudflare Agents SDK docs](https://developers.cloudflare.com/agents/)
+- [Cloudflare Email Routing docs](https://developers.cloudflare.com/email-routing/)
+
 ---
 
-# Chapter 1 - Email Triggers a Persistent Agent
+# Getting Started — Chapter 1
 
 Email doesn't trigger a function — it wakes up a persistent entity.
 
