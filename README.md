@@ -1,25 +1,37 @@
-# Support Agent
+# Email Agent Workshop
 
-## Chapter 2 - Adding Intelligence
+Workshop: Build an AI email agent with Cloudflare Agents SDK and Email Routing.
 
-### Step 1 - Set up
+## Chapters
 
-1. Install the AI SDK and Workers AI Provider packages:
+- [Chapter 1 - Email Triggers a Persistent Agent](https://github.com/harshil1712/email-agent-workshop-code/tree/chapter-1)
+- -> **[Chapter 2 - AI = Understanding](https://github.com/harshil1712/email-agent-workshop-code/tree/chapter-2)** (this branch)
+- [Chapter 3 - Persistence = Memory](https://github.com/harshil1712/email-agent-workshop-code/tree/chapter-3)
+
+---
+
+# Chapter 2 - AI = Understanding
+
+The agent reads, interprets, and responds intelligently.
+
+## What you'll learn
+
+- An LLM reads the email and understands intent — no keyword matching required
+- The Parse → Call LLM → Reply flow
+- How to prevent mail loops using `isAutoReplyEmail()`
+
+## Steps
+
+### Step 1 - Install dependencies
+
 ```bash
-npm i ai workers-ai-provider
-```
-2. Add Workers AI bindings, if not already added
-```jsonc
-{
-  "ai": {
-		"binding": "AI"
-	}
-}
+npm install ai workers-ai-provider
 ```
 
-### Step 2 - Integrate Workers AI
+### Step 2 - Add a system prompt
 
-1. Add system prompt
+Define the agent's persona, knowledge, and guardrails:
+
 ```ts
 const SYSTEM_PROMPT = `You are the inbox agent for FastFlare Home Services,
 a home services company offering cleaning, plumbing, and landscaping.
@@ -36,91 +48,88 @@ Business hours: Mon-Fri 8am-6pm
 Emergency plumbing: available 24/7, $350 callout`;
 ```
 
-2. Import methods from the packages
+### Step 3 - Integrate Workers AI
+
+1. Import `createWorkersAI` and `generateText`:
+
 ```ts
-import { createWorkersAI } from "workers-ai-provider";
-import { generateText } from "ai";
-```
-3. Update `onEmail` handler
-```ts
-...
-export class SupportAgent extends Agent<Env> {
-	async onEmail(email: AgentEmail) {
-		const raw = await email.getRaw();
-		const parsed = await PostalMime.parse(raw);
-
-		console.log('Subject:', parsed.subject);
-		console.log('From:', parsed.from);
-		console.log('Text body:', parsed.text);
-
-		const workersai = createWorkersAI({ binding: this.env.AI });
-		const { text } = await generateText({
-			model: workersai('@cf/zai-org/glm-4.7-flash'),
-			system: SYSTEM_PROMPT,
-			messages: [
-				{
-					role: 'user',
-					content: parsed.text || 'No text content',
-				},
-			],
-		});
-
-		console.log('Generated response:', text);
-
-		await this.replyToEmail(email, {
-			fromName: 'FastFlare Home Services',
-			body: text,
-		});
-	}
-}
-...
+import { createWorkersAI } from 'workers-ai-provider';
+import { generateText } from 'ai';
 ```
 
-### Step 3 - Prevent loops
+2. Also import `isAutoReplyEmail` alongside `AgentEmail`:
 
-Update `onEmail` and the following:
+```ts
+import { isAutoReplyEmail, type AgentEmail } from 'agents/email';
+```
+
+3. Update the `onEmail` handler to guard against mail loops, call the LLM, and reply:
+
 ```ts
 async onEmail(email: AgentEmail) {
-		const raw = await email.getRaw();
-		const parsed = await PostalMime.parse(raw);
+  const raw = await email.getRaw();
+  const parsed = await PostalMime.parse(raw);
 
-		if (isAutoReplyEmail(parsed.headers)) {
-			console.log('Skipping auto-reply email');
-			return;
-		}
+  if (isAutoReplyEmail(parsed.headers)) {
+    console.log('Skipping auto-reply email');
+    return;
+  }
 
-		...
-	}
+  const workersai = createWorkersAI({ binding: this.env.AI });
+  const { text } = await generateText({
+    model: workersai('@cf/meta/llama-3.1-8b-instruct'),
+    system: SYSTEM_PROMPT,
+    messages: [
+      {
+        role: 'user',
+        content: parsed.text || 'No text content',
+      },
+    ],
+  });
+
+  await this.replyToEmail(email, {
+    fromName: 'FastFlare Home Services',
+    body: text,
+  });
+}
 ```
 
-### Step 3 - Test locally
+> `isAutoReplyEmail()` checks for RFC 3834 headers (`Auto-Submitted`, `X-Auto-Response-Suppress`, `Precedence`). Always add this guard — mail loops are a real danger in production.
 
-1. Start the development server
+### Step 4 - Test locally
+
+1. Start the development server:
+
 ```bash
 npm run dev
 ```
 
-2. Execute the following cURL command for local testing:
+2. Send a test email:
+
 ```bash
 curl --request POST 'http://localhost:8787/cdn-cgi/handler/email' \
---url-query 'from=alice@abc.com' \
---url-query 'to=support@example.com' \
---data-raw 'From: "Alice" <alice@abc.com>
+  --url-query 'from=alice@abc.com' \
+  --url-query 'to=support@example.com' \
+  --data-raw 'From: "Alice" <alice@abc.com>
 To: support@example.com
-Subject: Help with my order
+Subject: Booking enquiry
 Content-Type: text/plain; charset="utf-8"
-Message-ID: <test-email-001@localhost>
+Message-ID: <test-email-002@localhost>
 
-Hi there, I need help with my recent order #12345.'
+Hi, I would like to book a house cleaning for next Friday. What are your rates?'
 ```
 
-Output:
-```txt
-Subject: Help with my order
+Expected console output:
+
+```
+Subject: Booking enquiry
 From: { address: 'alice@abc.com', name: 'Alice' }
-Text body: Hi there, I need help with my recent order #12345.
-
-Generated response: Hi there! Thanks for reaching out. I'd be happy to help you with order #12345.
-
-Could you please let me know what specifically you need assistance with? For example, are you asking about the status of your booking, checking if it has been confirmed, or do you have questions about the service (like cleaning, plumbing, or landscaping)?
+Text body: Hi, I would like to book a house cleaning for next Friday. What are your rates?
+Generated response: Hi Alice, thank you for reaching out to FastFlare Home Services! ...
 ```
+
+## What we learned
+
+- Each customer gets their own Support Agent instance
+- Workers AI adds intelligence — intent-based, not keyword-based
+- New scenarios are handled without code changes
