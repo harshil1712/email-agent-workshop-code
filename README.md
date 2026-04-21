@@ -74,8 +74,6 @@ cd email-agent-workshop-code
 npm install
 ```
 
-> This project was scaffolded from the [`cloudflare/agents-starter`](https://github.com/cloudflare/agents-starter) template.
-
 ### Project structure
 
 ```
@@ -95,7 +93,7 @@ email-agent-workshop/
 
 ## Resources
 
-- [Slides](TODO)
+- [Slides](https://harshil.dev/slides/email-agent-workshop)
 - [Cloudflare Agents SDK docs](https://developers.cloudflare.com/agents/)
 - [Cloudflare Email Routing docs](https://developers.cloudflare.com/email-routing/)
 
