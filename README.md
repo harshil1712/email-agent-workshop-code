@@ -27,7 +27,12 @@ import PostalMime from "postal-mime";
 ```ts
 export class SupportAgent extends Agent<Env>{
   async onEmail(email:AgentEmail) {
-    ...
+    const raw = await email.getRaw();
+		const parsed = await PostalMime.parse(raw);
+
+		console.log('Subject:', parsed.subject);
+		console.log('From:', parsed.from);
+		console.log('Text body:', parsed.text);
   }
 }
 ```
@@ -69,8 +74,7 @@ Hi there, I need help with my recent order #12345.'
 
 Output:
 ```txt
-From: alice@abc.com
-To: support@example.com
 Subject: Help with my order
-Body: Hi there, I need help with my recent order #12345.
+From: { address: 'alice@abc.com', name: 'Alice' }
+Text body: Hi there, I need help with my recent order #12345.
 ```
