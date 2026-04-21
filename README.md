@@ -80,7 +80,7 @@ async onEmail(email: AgentEmail) {
 
   const workersai = createWorkersAI({ binding: this.env.AI });
   const { text } = await generateText({
-    model: workersai('@cf/meta/llama-3.1-8b-instruct'),
+    model: workersai('@cf/zai-org/glm-4.7-flash'),
     system: SYSTEM_PROMPT,
     messages: [
       {
