@@ -1,6 +1,6 @@
 # Email Agent Workshop
 
-Workshop: Build an AI email agent with Cloudflare Agents SDK and Email Routing.
+Workshop: Build an AI email agent with [Cloudflare Agents SDK](https://developers.cloudflare.com/agents/) and [Email Routing](https://developers.cloudflare.com/email-routing/).
 
 ## Chapters
 
@@ -28,6 +28,9 @@ The agent reads, interprets, and responds intelligently.
 npm install ai workers-ai-provider
 ```
 
+- [`ai`](https://sdk.vercel.ai/) — Vercel AI SDK for calling language models
+- [`workers-ai-provider`](https://www.npmjs.com/package/workers-ai-provider) — Workers AI provider for the Vercel AI SDK
+
 ### Step 2 - Add a system prompt
 
 Define the agent's persona, knowledge, and guardrails:
@@ -48,7 +51,7 @@ Business hours: Mon-Fri 8am-6pm
 Emergency plumbing: available 24/7, $350 callout`;
 ```
 
-### Step 3 - Integrate Workers AI
+### Step 3 - Integrate [Workers AI](https://developers.cloudflare.com/workers-ai/)
 
 1. Import `createWorkersAI` and `generateText`:
 
