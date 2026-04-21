@@ -1,6 +1,6 @@
 # Email Agent Workshop
 
-Workshop: Build an AI email agent with Cloudflare Agents SDK and Email Routing.
+Workshop: Build an AI email agent with [Cloudflare Agents SDK](https://developers.cloudflare.com/agents/) and [Email Routing](https://developers.cloudflare.com/email-routing/).
 
 ## What you'll build
 
@@ -8,7 +8,7 @@ An AI Inbox Agent for **FastFlare Home Services** — a small business offering 
 
 By the end of this workshop, they'll have an agent that:
 
-- Receives email via Cloudflare Email Routing
+- Receives email via [Cloudflare Email Routing](https://developers.cloudflare.com/email-routing/)
 - Understands intent using an LLM
 - Maintains conversation history across threads
 - Queries a built-in SQL database
@@ -53,7 +53,7 @@ Five concepts, each building on the previous one. **This repo covers the first t
 ```
 
 **Key concepts:**
-- An **Agent** is a Durable Object — it hibernates when idle, wakes on demand, and has its own SQLite storage
+- An **Agent** is a [Durable Object](https://developers.cloudflare.com/durable-objects/) — it hibernates when idle, wakes on demand, and has its own SQLite storage
 - The **resolver** determines which agent instance handles each email — our custom resolver routes by sender so each customer gets their own isolated agent
 - One class (`SupportAgent`), many instances — one per customer
 
@@ -107,7 +107,7 @@ Email doesn't trigger a function — it wakes up a persistent entity.
 
 ## What you'll learn
 
-- An Agent is a Durable Object that hibernates when idle and wakes on demand
+- An Agent is a [Durable Object](https://developers.cloudflare.com/durable-objects/) that hibernates when idle and wakes on demand
 - The resolver pattern determines which agent instance handles each email
 - Custom sender-based routing gives each customer their own agent instance
 
@@ -128,7 +128,7 @@ Add the `send_email` binding to `wrangler.jsonc`:
 
 ### Step 2 - Handle Incoming Emails
 
-1. Import `postal-mime` and the `AgentEmail` interface, and `routeAgentEmail` from `agents`:
+1. Import [`postal-mime`](https://github.com/postalsys/postal-mime) and the `AgentEmail` interface, and `routeAgentEmail` from `agents`:
 
 ```ts
 import { Agent, routeAgentEmail, routeAgentRequest } from 'agents';
