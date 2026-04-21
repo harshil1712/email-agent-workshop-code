@@ -1,96 +1,50 @@
 # Support Agent
 
-## Chapter 2 - Adding Intelligence
+## Chapter 3 - Persistent Memory
 
-### Step 1 - Set up
+### Step 1 - Create tables
 
-1. Install the AI SDK and Workers AI Provider packages:
-```bash
-npm i ai workers-ai-provider
-```
-2. Add Workers AI bindings, if not already added
-```jsonc
-{
-  "ai": {
-		"binding": "AI"
-	}
+1. Add the `onStart()` method
+```ts
+async onStart() {
+	console.log('SupportAgent started');
 }
 ```
+2. Create tables
+```ts
+this.sql`CREATE TABLE IF NOT EXISTS messages (
+  id TEXT PRIMARY KEY, role TEXT, content TEXT, timestamp INTEGER DEFAULT (unixepoch())
+)`;
+this.sql`CREATE TABLE IF NOT EXISTS jobs (
+  id TEXT PRIMARY KEY, service_type TEXT, status TEXT DEFAULT 'requested', scheduled_date TEXT, notes TEXT, created_at INTEGER DEFAULT (unixepoch()), updated_at INTEGER DEFAULT (unixepoch())
+)`;
+```
 
-### Step 2 - Integrate Workers AI
+### Step 2 - Store and retrieve messages
 
 1. Add system prompt
 ```ts
-const SYSTEM_PROMPT = `You are the inbox agent for FastFlare Home Services,
-a home services company offering cleaning, plumbing, and landscaping.
-
-Your job is to:
-- Read the customer's email and understand what they need
-- Respond professionally and helpfully
-- If they want to book a service, acknowledge it and confirm you'll arrange it
-- If they ask about pricing or availability, provide what you know
-- If you can't help, let them know a human will follow up
-
-Available services: cleaning ($150), plumbing ($200 callout), landscaping ($300)
-Business hours: Mon-Fri 8am-6pm
-Emergency plumbing: available 24/7, $350 callout`;
-```
-
-2. Import methods from the packages
-```ts
-import { createWorkersAI } from "workers-ai-provider";
-import { generateText } from "ai";
-```
-3. Update `onEmail` handler
-```ts
-...
-export class SupportAgent extends Agent<Env> {
-	async onEmail(email: AgentEmail) {
-		const raw = await email.getRaw();
-		const parsed = await PostalMime.parse(raw);
-
-		console.log('Subject:', parsed.subject);
-		console.log('From:', parsed.from);
-		console.log('Text body:', parsed.text);
-
-		const workersai = createWorkersAI({ binding: this.env.AI });
-		const { text } = await generateText({
-			model: workersai('@cf/zai-org/glm-4.7-flash'),
-			system: SYSTEM_PROMPT,
-			messages: [
-				{
-					role: 'user',
-					content: parsed.text || 'No text content',
-				},
-			],
-		});
-
-		console.log('Generated response:', text);
-
-		await this.replyToEmail(email, {
-			fromName: 'FastFlare Home Services',
-			body: text,
-		});
-	}
-}
-...
-```
-
-### Step 3 - Prevent loops
-
-Update `onEmail` and the following:
-```ts
 async onEmail(email: AgentEmail) {
-		const raw = await email.getRaw();
-		const parsed = await PostalMime.parse(raw);
+  ...
 
-		if (isAutoReplyEmail(parsed.headers)) {
-			console.log('Skipping auto-reply email');
-			return;
-		}
+  // 1. Log the incoming email
+  this.sql`INSERT INTO messages (id, role, content) VALUES (${crypto.randomUUID()}, 'user', ${parsed.text ?? ""})`;
 
-		...
-	}
+  // 2. Fetch history and pass it to the LLM
+  const recentMessages = this.sql<{ role: string; content: string }>`
+    SELECT role, content FROM messages ORDER BY timestamp DESC LIMIT 10
+  `.reverse(); // DESC→ASC: LLM expects oldest-first
+
+  const { text } = await generateText({
+    model: openai("gpt-4o"),
+    system: SYSTEM_PROMPT,
+    messages: recentMessages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
+  });
+
+  // 3. Log the reply and send it
+  this.sql`INSERT INTO messages (id, role, content) VALUES (${crypto.randomUUID()}, 'assistant', ${text})`;
+  await this.replyToEmail(email, { fromName: "FastFlare Home Services", body: text });
+}
 ```
 
 ### Step 3 - Test locally
