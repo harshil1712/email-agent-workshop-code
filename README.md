@@ -1,6 +1,6 @@
 # Email Agent Workshop
 
-Workshop: Build an AI email agent with Cloudflare Agents SDK and Email Routing.
+Workshop: Build an AI email agent with [Cloudflare Agents SDK](https://developers.cloudflare.com/agents/) and [Email Routing](https://developers.cloudflare.com/email-routing/).
 
 ## Chapters
 
@@ -16,7 +16,7 @@ The agent remembers conversations across every email.
 
 ## What you'll learn
 
-- Every Agent instance has its own SQLite database via `this.sql`
+- Every Agent instance has its own [SQLite database](https://developers.cloudflare.com/agents/api-reference/store-and-sync-state/#sql-storage) via `this.sql`
 - How to store and retrieve conversation history to give the LLM full context
 - The difference between `this.sql` (structured data) and `this.state` (lightweight working context)
 
@@ -24,7 +24,7 @@ The agent remembers conversations across every email.
 
 ### Step 1 - Create tables in `onStart()`
 
-`onStart()` runs on cold start and after hibernation, so create tables with `IF NOT EXISTS`:
+[`onStart()`](https://developers.cloudflare.com/agents/api-reference/lifecycle-methods/#onstart) runs on cold start and after hibernation, so create tables with `IF NOT EXISTS`:
 
 ```ts
 async onStart() {
