@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "email-agent-workshop",
+	"name": "email-agent-workshop-slides-sender",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-04-21",
 	"compatibility_flags": [
@@ -13,21 +13,27 @@
 	"observability": {
 		"enabled": true
 	},
+	"send_email": [
+		{
+			"name": "EMAIL",
+			"remote": true
+		}
+	],
 	"ai": {
 		"binding": "AI"
 	},
 		"durable_objects": {
 		"bindings": [
 			{
-				"class_name": "SupportAgent",
-				"name": "SupportAgent"
+				"class_name": "SendSlides",
+				"name": "SendSlides"
 			}
 		]
 	},
 	"migrations": [
 		{
 			"new_sqlite_classes": [
-				"SupportAgent"
+				"SendSlides"
 			],
 			"tag": "v1"
 		}
